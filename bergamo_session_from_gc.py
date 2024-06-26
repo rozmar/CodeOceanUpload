@@ -12,10 +12,18 @@ from aind_metadata_mapper.bergamo.session import (
 import pandas as pd
 import os,datetime,json
 import numpy as np
-version = 3
+version = 5#4
+# version 5 - tiff file list added to stimulusepoch and tiff file stem to streams
+# version 4 - updated rig json matching (Mekhla) and imaging wavelength customized
 overwrite_metadata = False
 extracted_data_folders = '/home/jupyter/bucket/CodeOcean_transfer/'
 upload_job_pd = pd.read_csv(os.path.join(extracted_data_folders,'uplpoad_job.csv'))
+# wavelenght dictionary: the default is 920 nm, for given mice, wavelength can be changed
+imaging_wavelength_dict = {'980':[650921,683842,685615,685613,685611,688405,687399,695205,
+                                  686681,698158,687408,705363,705360,708792,706604,711604,715261],
+                          '990':[710358,716537,714729,716539,716540,716542,729854,692996,
+                                 693001,693010,710355,693011,696202,706952,706957,706956,
+                                 696198,619081,693011,633069]}
 for session_row in upload_job_pd.iterrows():
     session_row = session_row[1]
     
@@ -99,11 +107,16 @@ for session_row in upload_job_pd.iterrows():
         asdasd
     print(behavior_task_name)
     #ry:
+    imaging_laser_wavelength = 920
+    for wl in imaging_wavelength_dict.keys():
+        if int(session_row['subject_id']) in imaging_wavelength_dict[wl]:
+            imaging_laser_wavelength = int(wl)
+            print('imaging wavelength is {} nm'.format(wl))
     user_settings = JobSettings(input_source=Path(ophys_dir),
                                 output_directory=Path('/'.join(behavior_dir.split('/')[:-1])),
                                 experimenter_full_name=["Kayvon Daie", "Marton Rozsa"],
                                 subject_id=str(int(session_row['subject_id'])),
-                                imaging_laser_wavelength = 920,
+                                imaging_laser_wavelength = imaging_laser_wavelength,
                                 fov_imaging_depth= 200,
                                 fov_targeted_structure= 'Primary Motor Cortex',
                                 notes= 'This metadata was generated from old data post-hoc on {} - version {}'.format(datetime.datetime.now(),version),
@@ -124,10 +137,12 @@ for session_row in upload_job_pd.iterrows():
                                 average_hit_rate=  sum(hittrials[goodtrials])/sum(goodtrials),
                                 trial_num=sum(goodtrials))
     etl_job = BergamoEtl(job_settings=user_settings,)
-    try:
-        session_metadata = etl_job.run_job()
-    except:
-        print('error during generating metadata.. skipping')
+    session_metadata = etl_job.run_job()
+#     try:
+#         session_metadata = etl_job.run_job()
+#     except:
+#         print('error during generating metadata.. skipping')
+        
     # except:
     #     print('error, could not extract metadata')
     

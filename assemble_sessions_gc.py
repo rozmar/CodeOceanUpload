@@ -52,16 +52,31 @@ for mouse_id in os.listdir(raw_imaging_path):
         skip_reason.append('improper mouse id')
         continue
     for session in os.listdir(os.path.join(raw_imaging_path,mouse_id)):
-        try:
-            datetime.datetime.strptime(session,'%m%d%y')
-        except:
+        goodsession = True
+        if '.' not in session:
+            try:
+                datenow = datetime.datetime.strptime(session,'%m%d%y')
+            except:
+                try:
+                    datenow =datetime.datetime.strptime(session,'%y%m%d')
+                except:
+                    try:
+                        datenow =datetime.datetime.strptime(session[:6],'%m%d%y')
+                    except:
+                        try:
+                            datenow =datetime.datetime.strptime(session[:6],'%m%d%y')
+                        except:
+                            goodession=False
+                                
+
             #print('{} is not a proper session folder, skipping'.format(session))
+        if not goodsession:
             skipped_directories.append(os.path.join(raw_imaging_path,mouse_id,session))
             skip_reason.append('improper session name')
             continue
         if mouse_id not in session_dates.keys():
             session_dates[mouse_id] = {}
-        session_dates[mouse_id][datetime.datetime.strptime(session,'%m%d%y')]  = [session]
+        session_dates[mouse_id][datenow]  = [session]
         
         
         
@@ -139,7 +154,7 @@ for mouse_id in list(session_dates.keys()):#[::-1]:
         print('starting {} - {}'.format(mouse_id,session))
         idx = -1
         tiffheader = np.nan
-        while np.abs(idx)<len(bpod_dict['scanimage_tiff_headers']):
+        while np.abs(idx)<len(bpod_dict['scanimage_tiff_headers'])+1:
             try:
                 tiffheader = bpod_dict['scanimage_tiff_headers'][idx].tolist()[0]
                 break
