@@ -12,10 +12,11 @@ from aind_metadata_mapper.bergamo.session import (
 import pandas as pd
 import os,datetime,json
 import numpy as np
-version = 5#4
+version = 6#4
+# version 6 - tiff file stem is added to stimulusepoch
 # version 5 - tiff file list added to stimulusepoch and tiff file stem to streams
 # version 4 - updated rig json matching (Mekhla) and imaging wavelength customized
-overwrite_metadata = False
+overwrite_metadata = True
 extracted_data_folders = '/home/jupyter/bucket/CodeOcean_transfer/'
 upload_job_pd = pd.read_csv(os.path.join(extracted_data_folders,'uplpoad_job.csv'))
 # wavelenght dictionary: the default is 920 nm, for given mice, wavelength can be changed
