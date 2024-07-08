@@ -12,13 +12,14 @@ from aind_metadata_mapper.bergamo.session import (
 import pandas as pd
 import os,datetime,json
 import numpy as np
-version = 6#4
+version = 7#4
+# version 7 - training type and session comment added from marton's notes
 # version 6 - tiff file stem is added to stimulusepoch
 # version 5 - tiff file list added to stimulusepoch and tiff file stem to streams
 # version 4 - updated rig json matching (Mekhla) and imaging wavelength customized
 overwrite_metadata = True
 extracted_data_folders = '/home/jupyter/bucket/CodeOcean_transfer/'
-upload_job_pd = pd.read_csv(os.path.join(extracted_data_folders,'uplpoad_job.csv'))
+upload_job_pd = pd.read_csv(os.path.join(extracted_data_folders,'uplpoad_job_NEW.csv'))#uplpoad_job
 # wavelenght dictionary: the default is 920 nm, for given mice, wavelength can be changed
 imaging_wavelength_dict = {'980':[650921,683842,685615,685613,685611,688405,687399,695205,
                                   686681,698158,687408,705363,705360,708792,706604,711604,715261],
@@ -50,6 +51,23 @@ for session_row in upload_job_pd.iterrows():
             behavior_video_dir =  session_row['modality{}.source'.format(modality_i)]
     
     
+    bci_id = ophys_dir.split('/')[-2]
+    note_str = ''
+    try:
+        mouse_metadata = pd.read_csv('/home/jupyter/bucket/Metadata/{}.csv'.format(bci_id))
+    
+        bci_id = ophys_dir.split('/')[-2]
+        bci_id = bci_id.replace('_','')
+        session_date = datetime.datetime.strptime(ophys_dir.split('/')[-1],'%m%d%y')
+        session_date = str(session_date.date()).replace('-','/')
+        
+        if 'Training type' in mouse_metadata.keys():
+            note_str += 'Training type: [{}]'.format(mouse_metadata.loc[mouse_metadata['Date']==session_date,'Training type'].values[0])
+        if 'Comment' in mouse_metadata.keys():
+            note_str += ' - Comment: [{}]'.format(mouse_metadata.loc[mouse_metadata['Date']==session_date,'Comment'].values[0])
+        print('note added: {}'.format(note_str))
+    except:
+        pass
     
     try:    
         with open(Path('/'.join(behavior_dir.split('/')[:-1]),'session.json')) as json_data:
@@ -113,6 +131,7 @@ for session_row in upload_job_pd.iterrows():
         if int(session_row['subject_id']) in imaging_wavelength_dict[wl]:
             imaging_laser_wavelength = int(wl)
             print('imaging wavelength is {} nm'.format(wl))
+    
     user_settings = JobSettings(input_source=Path(ophys_dir),
                                 output_directory=Path('/'.join(behavior_dir.split('/')[:-1])),
                                 experimenter_full_name=["Kayvon Daie", "Marton Rozsa"],
@@ -138,6 +157,7 @@ for session_row in upload_job_pd.iterrows():
                                 average_hit_rate=  sum(hittrials[goodtrials])/sum(goodtrials),
                                 trial_num=sum(goodtrials))
     etl_job = BergamoEtl(job_settings=user_settings,)
+
     session_metadata = etl_job.run_job()
 #     try:
 #         session_metadata = etl_job.run_job()
